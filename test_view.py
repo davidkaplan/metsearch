@@ -15,9 +15,9 @@ def test_populate():
     app = QApplication(sys.argv)
     window = view.MainWindow()
     window.show()
-    s = 'deluge'
+    s = 'stone'
     errors, artworks = rest.searchObjects(s)
-    artworks = artworks[:80]
+    artworks = artworks
     window.updateTable(artworks)
     sys.exit(app.exec())
 

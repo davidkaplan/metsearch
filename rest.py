@@ -2,6 +2,7 @@ import grequests
 import requests
 
 _ENDPOINT = 'https://collectionapi.metmuseum.org/public/collection/v1/'
+_MAX_RETURN_OBJECTS = 80
 
 def _get(url):
     r = requests.get(url)
@@ -29,6 +30,7 @@ def getObject(id):
     return status_code, data
 
 def getObjects(ids):
+    ids = ids[:_MAX_RETURN_OBJECTS]
     requests_list = _object_requests_list(ids)
     reqs = [grequests.get(u) for u in requests_list]
     responses = grequests.map(reqs)
