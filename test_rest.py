@@ -10,9 +10,10 @@ def test_search():
 
 def test_objects():
     s = 'deluge'
-    objects = rest.searchObjects(s)
-    print('Number of Objects:', len(objects))
+    errors, objects = rest.searchObjects(s)
     pprint.pp(objects[0])
+    print('Number of Objects:', len(objects))
+    print('Number of failed requests:', errors)
 
 if __name__ == '__main__':
     start = time.time()

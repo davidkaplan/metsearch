@@ -32,10 +32,16 @@ def getObjects(ids):
     requests_list = _object_requests_list(ids)
     reqs = [grequests.get(u) for u in requests_list]
     responses = grequests.map(reqs)
+    num_errors = 0
+    for response in responses:
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            num_errors += 1
     objects = [response.json() for response in responses]
-    return objects
+    return num_errors, objects
 
 def searchObjects(search_term):
     status_code, ids = search(search_term)
-    objects = getObjects(ids)
-    return objects
+    errors, objects = getObjects(ids)
+    return errors, objects
