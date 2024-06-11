@@ -33,13 +33,18 @@ def getObjects(ids):
     reqs = [grequests.get(u) for u in requests_list]
     responses = grequests.map(reqs)
     num_errors = 0
-    for response in responses:
+    sanitized_responses = []
+    for i, response in enumerate(responses):
         try:
             response.raise_for_status()
+            sanitized_responses.append(response.json())
         except requests.exceptions.RequestException:
             num_errors += 1
-    objects = [response.json() for response in responses]
-    return num_errors, objects
+            print('WARNING: Request failed with code ' + str(response.status_code), response)
+            print('Object: ', ids[i])
+            print('URL: ', requests_list[i])
+            print('Payload: ', response.json())
+    return num_errors, sanitized_responses
 
 def searchObjects(search_term):
     status_code, ids = search(search_term)
