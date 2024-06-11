@@ -1,3 +1,4 @@
+import grequests
 import requests
 
 _ENDPOINT = 'https://collectionapi.metmuseum.org/public/collection/v1/'
@@ -7,6 +8,13 @@ def _get(url):
     status_code = r.status_code
     data = r.json()
     return status_code, data
+
+def _object_requests_list(ids):
+    requests_list = []
+    for id in ids:
+        url = _ENDPOINT + 'objects/' + str(id)
+        requests_list.append(url)
+    return requests_list
 
 def search(search_term):
     url = _ENDPOINT + 'search?q=' + search_term
@@ -21,10 +29,10 @@ def getObject(id):
     return status_code, data
 
 def getObjects(ids):
-    objects = []
-    for id in ids:
-        status_code, data = getObject(id)
-        objects.append(data)
+    requests_list = _object_requests_list(ids)
+    reqs = [grequests.get(u) for u in requests_list]
+    responses = grequests.map(reqs)
+    objects = [response.json() for response in responses]
     return objects
 
 def searchObjects(search_term):

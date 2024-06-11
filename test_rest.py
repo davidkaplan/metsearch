@@ -1,5 +1,6 @@
 import rest
 import pprint
+import time
 
 def test_search():
     s = 'deluge'
@@ -14,5 +15,7 @@ def test_objects():
     pprint.pp(objects[0])
 
 if __name__ == '__main__':
+    start = time.time()
     #test_search()
     test_objects()
+    print('elapsed:', (time.time() - start))
