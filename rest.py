@@ -1,8 +1,11 @@
 import grequests
 import requests
+import os, tempfile
 
 _ENDPOINT = 'https://collectionapi.metmuseum.org/public/collection/v1/'
 _MAX_RETURN_OBJECTS = 80
+_TEMP_DIR = tempfile.gettempdir()
+print('Tempdir: ', _TEMP_DIR)
 
 def _get(url):
     r = requests.get(url)
@@ -43,12 +46,31 @@ def getObjects(ids):
         except requests.exceptions.RequestException:
             num_errors += 1
             print('WARNING: Request failed with code ' + str(response.status_code), response)
-            print('Object: ', ids[i])
-            print('URL: ', requests_list[i])
-            print('Payload: ', response.json())
+            print('    Object: ', ids[i])
+            print('    URL: ', requests_list[i])
+            print('    Payload: ', response.json())
     return num_errors, sanitized_responses
 
 def searchObjects(search_term):
     status_code, ids = search(search_term)
     errors, objects = getObjects(ids)
     return errors, objects
+
+def downloadTempFile(url):
+    basename = os.path.basename(url)
+    if basename == '':
+        return None
+    tmp_filename = os.path.join(_TEMP_DIR, basename)
+    
+    # if it already exists, don't download again
+    if os.path.isfile(tmp_filename):
+        return tmp_filename
+    
+    with open(tmp_filename, "wb") as fh:
+        response = requests.get(url)
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            return None
+        fh.write(response.content)
+    return tmp_filename

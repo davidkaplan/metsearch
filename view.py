@@ -1,4 +1,26 @@
-from PySide6.QtWidgets import QApplication, QWidget, QTableWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QAbstractItemView, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QTableWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QAbstractItemView, QTableWidgetItem, QHeaderView
+from PySide6.QtCore import QObject, Signal, QThreadPool, QRunnable, QSize
+from PySide6.QtGui import QPixmap
+
+import rest
+
+_ROW_HEIGHT = 50 # pixels
+
+class ImageDownloaderWorkerSignals(QObject):
+    finished = Signal()
+    result = Signal(str, QTableWidgetItem)
+
+class ImageDownloader(QRunnable):
+    def __init__(self, url, tableitem):
+        super(ImageDownloader, self).__init__()
+        self.url = url
+        self.tableitem = tableitem
+        self.signals = ImageDownloaderWorkerSignals()
+
+    def run(self):
+        tmp_file = rest.downloadTempFile(self.url)
+        self.signals.result.emit(tmp_file, self.tableitem)
+        
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -20,24 +42,27 @@ class MainWindow(QWidget):
         self.main_layout.addWidget(self.table)
 
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(['Preview', 'Title', 'Artist', 'Year'])
+        self.table.setHorizontalHeaderLabels(['Preview', 'Title', 'Artist', 'Date'])
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.header = self.table.horizontalHeader()
         self.header.setSectionResizeMode(QHeaderView.Stretch)
         default_width = self.header.sectionSize(0)
         self.header.setDefaultSectionSize(default_width)
         self.header.setSectionResizeMode(QHeaderView.Interactive)
-        self.header.resizeSection(0, 50)
+        self.header.resizeSection(0, _ROW_HEIGHT)
+        self.table.setIconSize(QSize(_ROW_HEIGHT, _ROW_HEIGHT))
 
         self.table.setSortingEnabled(True)
         self.header.setStretchLastSection(True)
         self.header.setSortIndicatorShown(True)
 
-        self.table.verticalHeader().setDefaultSectionSize(50)
+        self.table.verticalHeader().setDefaultSectionSize(_ROW_HEIGHT)
         self.table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
         self.setLayout(self.main_layout)
         self.resize(600, 600)
+
+        self.threadpool = QThreadPool()
 
     def updateTable(self, items):
         self.table.clearContents()
@@ -45,11 +70,26 @@ class MainWindow(QWidget):
 
         for i, item in enumerate(items):
             try:
+                self.table.setItem(i, 0, QTableWidgetItem())
                 self.table.setItem(i, 1, QTableWidgetItem(item['title']))
                 self.table.setItem(i, 2, QTableWidgetItem(item['artistDisplayName']))
-                self.table.setItem(i, 3, QTableWidgetItem(item['objectEndDate']))
+                self.table.setItem(i, 3, QTableWidgetItem(str(item['objectEndDate'])))
             except KeyError as e:
                 print('KeyError:' + str(e), item)
 
-        #self.table.resizeColumnsToContents()
-        #self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+            # Cache Images
+            if 'primaryImageSmall' in item:
+                url = item['primaryImageSmall']
+                if url == '':
+                    continue
+                tableitem = self.table.item(i, 0)
+                worker = ImageDownloader(url, tableitem)
+                worker.signals.result.connect(self.updateThumbnail)
+                self.threadpool.start(worker)
+
+    def updateThumbnail(self, filename, tableitem):
+        if filename and not filename == '':
+            thumb_pixmap = QPixmap(filename)
+            tableitem.setSizeHint(QSize(_ROW_HEIGHT, _ROW_HEIGHT))
+            tableitem.setIcon(thumb_pixmap)
+
