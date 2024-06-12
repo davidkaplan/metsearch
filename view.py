@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap
 
 import rest
 
-_ROW_HEIGHT = 50 # pixels
+_ROW_HEIGHT = 100 # pixels
 
 class ImageDownloaderWorkerSignals(QObject):
     finished = Signal()
@@ -30,6 +30,7 @@ class MainWindow(QWidget):
         self.label = QLabel('Search')
         self.search = QLineEdit('')
         self.button = QPushButton("Search")
+        self.button.clicked.connect(self.doSearch)
 
         self.searchbar_layout = QHBoxLayout()
         self.searchbar_layout.addWidget(self.label)
@@ -61,7 +62,7 @@ class MainWindow(QWidget):
 
         self.setLayout(self.main_layout)
         self.resize(600, 600)
-
+                                                
         self.threadpool = QThreadPool()
 
     def updateTable(self, items):
@@ -86,10 +87,20 @@ class MainWindow(QWidget):
                 worker = ImageDownloader(url, tableitem)
                 worker.signals.result.connect(self.updateThumbnail)
                 self.threadpool.start(worker)
+        
+        # reset scroll to top
+        self.table.scrollToItem(self.table.item(0, 0))
 
     def updateThumbnail(self, filename, tableitem):
         if filename and not filename == '':
             thumb_pixmap = QPixmap(filename)
             tableitem.setSizeHint(QSize(_ROW_HEIGHT, _ROW_HEIGHT))
             tableitem.setIcon(thumb_pixmap)
+
+    def doSearch(self):
+        search_string = self.search.text()
+        if search_string == '':
+            return
+        errors, artworks = rest.searchObjects(search_string)
+        self.updateTable(artworks)
 
