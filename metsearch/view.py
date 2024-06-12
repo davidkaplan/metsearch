@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QTableWidget, QLabel, QLineEdit, QPushBut
 from PySide6.QtCore import QObject, Signal, QThreadPool, QRunnable, QSize
 from PySide6.QtGui import QPixmap
 
-import rest
+from metsearch import rest
 
 _ROW_HEIGHT = 100 # pixels
 
