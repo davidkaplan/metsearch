@@ -20,8 +20,12 @@ def _object_requests_list(ids):
         requests_list.append(url)
     return requests_list
 
-def search(search_term):
-    url = _ENDPOINT + 'search?q=' + search_term
+def search(search_term, imagesOnly=False):
+    print('REST Search Images Only:', imagesOnly)
+    url = _ENDPOINT + 'search?'
+    if imagesOnly:
+        url += 'hasImages=true&'
+    url += ('q=' + search_term)
     status_code, data = _get(url)
     total = data['total']
     ids = data['objectIDs']
@@ -53,8 +57,8 @@ def getObjects(ids):
             print('    Payload: ', response.json())
     return num_errors, sanitized_responses
 
-def searchObjects(search_term):
-    status_code, ids = search(search_term)
+def searchObjects(search_term, **kwargs):
+    status_code, ids = search(search_term, **kwargs)
     errors, objects = getObjects(ids)
     return errors, objects
 

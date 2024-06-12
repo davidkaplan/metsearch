@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QTableWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QAbstractItemView, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QTableWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QAbstractItemView, QTableWidgetItem, QHeaderView, QCheckBox
 from PySide6.QtCore import QObject, Signal, QThreadPool, QRunnable, QSize
 from PySide6.QtGui import QPixmap
 
@@ -21,7 +21,6 @@ class ImageDownloader(QRunnable):
         tmp_file = rest.downloadTempFile(self.url)
         self.signals.result.emit(tmp_file, self.tableitem)
         
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -29,13 +28,15 @@ class MainWindow(QWidget):
 
         self.label = QLabel('Search')
         self.search = QLineEdit('')
-        self.button = QPushButton("Search")
-        self.button.clicked.connect(self.doSearch)
+        self.hasImageCheckBox = QCheckBox('Has Image')
+        self.searchButton = QPushButton("Search")
+        self.searchButton.clicked.connect(self.doSearch)
 
         self.searchbar_layout = QHBoxLayout()
         self.searchbar_layout.addWidget(self.label)
         self.searchbar_layout.addWidget(self.search)
-        self.searchbar_layout.addWidget(self.button)
+        self.searchbar_layout.addWidget(self.hasImageCheckBox)
+        self.searchbar_layout.addWidget(self.searchButton)
 
         self.table = QTableWidget()
         self.main_layout = QVBoxLayout()
@@ -101,6 +102,7 @@ class MainWindow(QWidget):
         search_string = self.search.text()
         if search_string == '':
             return
-        errors, artworks = rest.searchObjects(search_string)
+        hasImage = self.hasImageCheckBox.isChecked()
+        errors, artworks = rest.searchObjects(search_string, imagesOnly=hasImage)
         self.updateTable(artworks)
 
