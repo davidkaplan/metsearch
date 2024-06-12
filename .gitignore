@@ -2,3 +2,6 @@ __pycache__/
 scripts/MetObjects.txt
 scripts/classifications.txt
 .DS_Store
+build/
+dist/
+*.spec

@@ -1,3 +1,4 @@
 grequests
 requests
 PySide6
+pyinstaller
