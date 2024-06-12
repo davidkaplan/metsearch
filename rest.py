@@ -33,6 +33,8 @@ def getObject(id):
     return status_code, data
 
 def getObjects(ids):
+    if ids is None or len(ids) == 0:
+        return 0, []
     ids = ids[:_MAX_RETURN_OBJECTS]
     requests_list = _object_requests_list(ids)
     reqs = [grequests.get(u) for u in requests_list]
