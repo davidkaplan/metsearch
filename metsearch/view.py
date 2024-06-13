@@ -84,12 +84,15 @@ class MainWindow(QWidget):
         self.resize(600, 600)
                                                 
         self.threadpool = QThreadPool()
-        
+
+        self.updateTable([])
 
 
     def updateTable(self, items):
         self.table.clearContents()
         self.table.setRowCount(len(items))
+        self.hasImageCheckBox.setEnabled(False)
+        self.classificationCheckBox.setEnabled(False)
 
         classifications = [_CLASSIFICATION_DEFAULT_STR]
 
@@ -125,8 +128,12 @@ class MainWindow(QWidget):
         for classification in sorted(classifications):
             self.classificationComboBox.addItem(classification)
         self.classificationComboBox.blockSignals(False)
+        if len(classifications) > 1:
+            self.classificationCheckBox.setEnabled(True)
 
     def updateThumbnail(self, filename, tableitem):
+        if self.threadpool.activeThreadCount() == 0:
+            self.hasImageCheckBox.setEnabled(True)
         if filename and not filename == '':
             thumb_pixmap = QPixmap(filename)
             tableitem.setSizeHint(QSize(_ROW_HEIGHT, _ROW_HEIGHT))
