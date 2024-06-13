@@ -4,6 +4,10 @@ from PySide6.QtGui import QPixmap
 
 from metsearch import rest
 
+'''
+view.py contains the Qt GUI and helper classes for our application. Note that for this simple application our GUI class acts as both model and controller.  For more complex functionality, we would implement independent Artwork and Artworks classes to seprate the model from the view.
+'''
+
 _ROW_HEIGHT = 100 # pixels
 _CLASSIFICATION_DEFAULT_STR = 'ALL CLASSIFICATIONS'
 
@@ -12,6 +16,9 @@ class ImageDownloaderSignals(QObject):
     result = Signal(str, QTableWidgetItem)
 
 class ImageDownloader(QRunnable):
+    '''
+    Helper class for threading image thumbnail downloads. Allows batch downloading without blocking the main app.
+    '''
     def __init__(self, url, tableitem):
         super(ImageDownloader, self).__init__()
         self.url = url
@@ -23,10 +30,17 @@ class ImageDownloader(QRunnable):
         self.signals.result.emit(tmp_file, self.tableitem)
         
 class MainWindow(QWidget):
+    '''
+    Main GUI class for displaying our application window and handling user input.
+    '''
     def __init__(self):
+        '''
+        Programmatically set up the GUI and layout.
+        '''
         super().__init__()
         self.setWindowTitle('MET Search')
 
+        # Search Bar
         self.label = QLabel('Search')
         self.search = QLineEdit('')
         self.searchButton = QPushButton("Search")
@@ -37,6 +51,7 @@ class MainWindow(QWidget):
         self.searchbar_layout.addWidget(self.search)
         self.searchbar_layout.addWidget(self.searchButton)
 
+        # Filter Bar
         self.filter_layout = QHBoxLayout()
         self.hasImageCheckBox = QCheckBox('Has Image')
         self.hasImageCheckBox.setFixedWidth(100)
@@ -55,12 +70,16 @@ class MainWindow(QWidget):
         self.filter_group = QGroupBox('Filter By')
         self.filter_group.setLayout(self.filter_layout)
 
+        # Table
         self.table = QTableWidget()
+
+        # Set main layout
         self.main_layout = QVBoxLayout()
         self.main_layout.addLayout(self.searchbar_layout)
         self.main_layout.addWidget(self.filter_group)
         self.main_layout.addWidget(self.table)
 
+        # Table config
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(['Preview', 'Title', 'Artist', 'Date', 'Classification'])
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -80,28 +99,41 @@ class MainWindow(QWidget):
         self.table.verticalHeader().setDefaultSectionSize(_ROW_HEIGHT)
         self.table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
+        # Finish up main windown
         self.setLayout(self.main_layout)
         self.resize(600, 600)
-                                                
+
+        # Create thread pool for download image workers.                                        
         self.threadpool = QThreadPool()
 
+        # Finally, call update to disable filter bar widgets until we have results.
         self.updateTable([])
 
 
     def updateTable(self, items):
+        '''
+        Update the TableWidget with our search records.
+        Args:
+            items (list[dict]): A list of artwork objects.
+        '''
+
+        # Reset table
         self.table.clearContents()
         self.table.setRowCount(len(items))
         self.hasImageCheckBox.setEnabled(False)
         self.classificationCheckBox.setEnabled(False)
 
+        # Store a list of classifications for these objects.
         classifications = [_CLASSIFICATION_DEFAULT_STR]
 
+        # Attempt to add each item to the table
         for i, item in enumerate(items):
             try:
-                self.table.setItem(i, 0, QTableWidgetItem())
+                self.table.setItem(i, 0, QTableWidgetItem()) # Empty item for thumbnail
                 self.table.setItem(i, 1, QTableWidgetItem(item['title']))
                 self.table.setItem(i, 2, QTableWidgetItem(item['artistDisplayName']))
                 self.table.setItem(i, 3, QTableWidgetItem(str(item['objectEndDate'])))
+                # Add classification
                 classification = item['classification']
                 self.table.setItem(i, 4, QTableWidgetItem(classification))
                 if classification not in classifications and not classification == '':
@@ -132,14 +164,25 @@ class MainWindow(QWidget):
             self.classificationCheckBox.setEnabled(True)
 
     def updateThumbnail(self, filename, tableitem):
+        '''
+        Adds a thumbnail image to the table. Called whenever an image download worker finishes.
+        Args:
+            filename (str): The path of the local file to read.
+            tabletitem (QTableWidgetItem): The table item cell to display the image within.
+        '''
+        # Keep image filter checkbox disabled until all thumbnails are loaded
         if self.threadpool.activeThreadCount() == 0:
             self.hasImageCheckBox.setEnabled(True)
+        # Create pixmap from image file and add to cell
         if filename and not filename == '':
             thumb_pixmap = QPixmap(filename)
             tableitem.setSizeHint(QSize(_ROW_HEIGHT, _ROW_HEIGHT))
             tableitem.setIcon(thumb_pixmap)
 
     def doSearch(self):
+        '''
+        Build a query from the string in the search bar, do the search, and add its results to the table.
+        '''
         search_string = self.search.text()
         if search_string == '':
             return
@@ -147,6 +190,9 @@ class MainWindow(QWidget):
         self.updateTable(artworks)
 
     def filter(self):
+        '''
+        Hide (and show) results in the table based upon filter criteria (image only, and classification)
+        '''
         images_only = self.hasImageCheckBox.isChecked()
         by_classification = self.classificationCheckBox.isChecked()
         classification_str = self.classificationComboBox.currentText()
