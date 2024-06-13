@@ -6,7 +6,7 @@ from metsearch import rest
 
 _ROW_HEIGHT = 100 # pixels
 
-class ImageDownloaderWorkerSignals(QObject):
+class ImageDownloaderSignals(QObject):
     finished = Signal()
     result = Signal(str, QTableWidgetItem)
 
@@ -15,7 +15,7 @@ class ImageDownloader(QRunnable):
         super(ImageDownloader, self).__init__()
         self.url = url
         self.tableitem = tableitem
-        self.signals = ImageDownloaderWorkerSignals()
+        self.signals = ImageDownloaderSignals()
 
     def run(self):
         tmp_file = rest.downloadTempFile(self.url)
