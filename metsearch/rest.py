@@ -21,7 +21,6 @@ def _object_requests_list(ids):
     return requests_list
 
 def search(search_term, imagesOnly=False):
-    print('REST Search Images Only:', imagesOnly)
     url = _ENDPOINT + 'search?'
     if imagesOnly:
         url += 'hasImages=true&'
@@ -29,6 +28,8 @@ def search(search_term, imagesOnly=False):
     status_code, data = _get(url)
     total = data['total']
     ids = data['objectIDs']
+    if total == 0 and ids is None:
+        ids = []
     return status_code, ids
 
 def getObject(id):
