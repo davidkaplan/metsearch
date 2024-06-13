@@ -1,22 +1,30 @@
-import rest
+import unittest
 import pprint
 import time
 
-def test_search():
-    s = 'deluge'
-    status_code, ids = rest.search(s)
-    print(status_code)
-    print(ids)
+from metsearch import rest
 
-def test_objects():
-    s = 'deluge'
-    errors, objects = rest.searchObjects(s)
-    pprint.pp(objects[0])
-    print('Number of Objects:', len(objects))
-    print('Number of failed requests:', errors)
+class Test_Rest(unittest.TestCase):
+    def setUp(self):
+        self.start_time = time.time()
+
+    def tearDown(self):
+        print('elapsed:', (time.time() - self.start_time))
+
+    def test_search(self):
+        s = 'deluge'
+        status_code, ids = rest.search(s)
+        print(status_code)
+        print(ids)
+        self.assertEqual(status_code, 200)
+
+    def test_objects(self):
+        s = 'deluge'
+        errors, objects = rest.searchObjects(s)
+        pprint.pp(objects[0])
+        print('Number of Objects:', len(objects))
+        print('Number of failed requests:', errors)
+        self.assertTrue(True)
 
 if __name__ == '__main__':
-    start = time.time()
-    #test_search()
-    test_objects()
-    print('elapsed:', (time.time() - start))
+    unittest.main()
