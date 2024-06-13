@@ -136,8 +136,7 @@ class MainWindow(QWidget):
         search_string = self.search.text()
         if search_string == '':
             return
-        hasImage = self.hasImageCheckBox.isChecked()
-        errors, artworks = rest.searchObjects(search_string, imagesOnly=hasImage)
+        errors, artworks = rest.searchObjects(search_string)
         self.updateTable(artworks)
 
     def filter(self):
